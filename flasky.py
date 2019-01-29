@@ -1,5 +1,8 @@
 import os
+
+from flask_login import login_required
 from flask_migrate import Migrate
+
 from app import create_app, db
 from app.models import User, Role
 
@@ -18,3 +21,9 @@ def test():
     import unittest
     tests = unittest.TestLoader().discover('tests')
     unittest.TextTestRunner(verbosity=2).run(tests)
+
+
+@app.route('/secret')
+@login_required
+def secret():
+    return 'Only authenticated users are allowed!'
