@@ -1,34 +1,43 @@
-from flask import render_template, session, redirect, url_for, current_app, flash
+from flask import render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 
 from app.decorators import admin_required, permission_required
 from . import main
-from .forms import NameForm, EditProfileForm, EditProfileAdminForm
+from .forms import EditProfileForm, EditProfileAdminForm, PostForm
 from .. import db
-from ..email import send_email
-from ..models import User, Permission, Role
+from ..models import User, Permission, Role, Post
 
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
-    form = NameForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.name.data).first()
-        if user is None:
-            user = User(username=form.name.data)
-            db.session.add(user)
-            db.session.commit()
-            session['known'] = False
-            if current_app.config['FLASKY_ADMIN']:
-                send_email(current_app.config['FLASKY_ADMIN'], 'New User',
-                           'mail/new_user', user=user)
-        else:
-            session['known'] = True
-        session['name'] = form.name.data
+    # form = NameForm()
+    # if form.validate_on_submit():
+    #     user = User.query.filter_by(username=form.name.data).first()
+    #     if user is None:
+    #         user = User(username=form.name.data)
+    #         db.session.add(user)
+    #         db.session.commit()
+    #         session['known'] = False
+    #         if current_app.config['FLASKY_ADMIN']:
+    #             send_email(current_app.config['FLASKY_ADMIN'], 'New User',
+    #                        'mail/new_user', user=user)
+    #     else:
+    #         session['known'] = True
+    #     session['name'] = form.name.data
+    #     return redirect(url_for('.index'))
+    # return render_template('index.html',
+    #                        form=form, name=session.get('name'),
+    #                        known=session.get('known', False))
+
+    form = PostForm()
+    if current_user.can(Permission.WRITE) and form.validate_on_submit():
+        post = Post(body=form.body.data,
+                    author=current_user._get_current_object())
+        db.session.add(post)
+        db.session.commit()
         return redirect(url_for('.index'))
-    return render_template('index.html',
-                           form=form, name=session.get('name'),
-                           known=session.get('known', False))
+    posts = Post.query.order_by(Post.timestamp.desc()).all()
+    return render_template('index.html', form=form, posts=posts)
 
 
 @main.route('/user/<username>')
