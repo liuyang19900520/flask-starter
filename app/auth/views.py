@@ -40,7 +40,7 @@ def register():
                     username=form.username.data,
                     password=form.password.data)
         db.session.add(user)
-        db.session.commit()
+
         token = user.generate_confirmation_token()
         send_email(user.email, 'Confirm Your Account',
                    'auth/email/confirm', user=user, token=token)
@@ -103,7 +103,6 @@ def change_password():
         if current_user.verify_password(form.old_password.data):
             current_user.password = form.password.data
             db.session.add(current_user)
-            db.session.commit()
             flash('Your password has been updated.')
             return redirect(url_for('main.index'))
         else:
@@ -136,7 +135,7 @@ def password_reset(token):
     form = PasswordResetForm()
     if form.validate_on_submit():
         if User.reset_password(token, form.password.data):
-            db.session.commit()
+
             flash('Your password has been updated.')
             return redirect(url_for('auth.login'))
         else:
@@ -167,7 +166,7 @@ def change_email_request():
 @login_required
 def change_email(token):
     if current_user.change_email(token):
-        db.session.commit()
+
         flash('Your email address has been updated.')
     else:
         flash('Invalid request.')
